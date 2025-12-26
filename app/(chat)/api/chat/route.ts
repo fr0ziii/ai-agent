@@ -3,9 +3,6 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
-  smoothStream,
-  stepCountIs,
-  streamText,
 } from "ai";
 import { after } from "next/server";
 import {
@@ -13,13 +10,10 @@ import {
   type ResumableStreamContext,
 } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
+import { createAgent, smoothStream } from "@/lib/ai/agent";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
-import { createDocument } from "@/lib/ai/tools/create-document";
-import { getWeather } from "@/lib/ai/tools/get-weather";
-import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
-import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -171,42 +165,20 @@ export async function POST(request: Request) {
           selectedChatModel.includes("reasoning") ||
           selectedChatModel.includes("thinking");
 
-        const result = streamText({
+        const agent = createAgent({
           model: getLanguageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          systemPrompt: systemPrompt({ selectedChatModel, requestHints }),
+          session,
+          dataStream,
+          isReasoningModel,
+          maxSteps: 5,
+        });
+
+        const result = await agent.stream({
           messages: await convertToModelMessages(uiMessages),
-          stopWhen: stepCountIs(5),
-          experimental_activeTools: isReasoningModel
-            ? []
-            : [
-                "getWeather",
-                "createDocument",
-                "updateDocument",
-                "requestSuggestions",
-              ],
           experimental_transform: isReasoningModel
             ? undefined
             : smoothStream({ chunking: "word" }),
-          providerOptions: isReasoningModel
-            ? {
-                anthropic: {
-                  thinking: { type: "enabled", budgetTokens: 10_000 },
-                },
-              }
-            : undefined,
-          tools: {
-            getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-            }),
-          },
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: "stream-text",
-          },
         });
 
         result.consumeStream();

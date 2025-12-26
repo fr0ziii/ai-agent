@@ -41,6 +41,16 @@ export const regularPrompt = `You are a friendly assistant! Keep your responses 
 
 When asked to write, create, or help with something, just do it directly. Don't ask clarifying questions unless absolutely necessary - make reasonable assumptions and proceed with the task.`;
 
+export const agentInstructions = `
+You are an AI assistant with tool-using capabilities. Follow these guidelines:
+
+1. Use tools when they help accomplish the user's request
+2. For simple conversational responses, respond directly without tools
+3. Break complex requests into logical steps
+4. If a tool call fails, explain the error and try an alternative
+5. Wait for user feedback before updating documents
+`;
+
 export type RequestHints = {
   latitude: Geo["latitude"];
   longitude: Geo["longitude"];
@@ -65,7 +75,7 @@ export const systemPrompt = ({
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
-  // reasoning models don't need artifacts prompt (they can't use tools)
+  // reasoning models don't need artifacts prompt or agent instructions (they can't use tools)
   if (
     selectedChatModel.includes("reasoning") ||
     selectedChatModel.includes("thinking")
@@ -73,7 +83,7 @@ export const systemPrompt = ({
     return `${regularPrompt}\n\n${requestPrompt}`;
   }
 
-  return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  return `${regularPrompt}\n\n${agentInstructions}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `
