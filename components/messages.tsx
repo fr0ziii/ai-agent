@@ -13,6 +13,10 @@ import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
+  type AgentStatus,
+  AgentStatusIndicator,
+} from "./agent-status-indicator";
+import {
   Plan,
   PlanContent,
   PlanDescription,
@@ -69,6 +73,17 @@ function PureMessages({
       >
         <div className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
           {messages.length === 0 && <Greeting />}
+
+          {/* Agent Status Indicator */}
+          {agentStatus && agentStatus !== "idle" && (
+            <AgentStatusIndicator
+              currentStep={
+                agentPlan?.steps.find((s) => s.status === "in_progress")
+                  ?.description
+              }
+              status={agentStatus as AgentStatus}
+            />
+          )}
 
           {agentPlan &&
             (agentStatus === "planning" || agentStatus === "executing") && (
