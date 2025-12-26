@@ -1,5 +1,3 @@
-import Image from "next/image";
-import type { ComponentProps, ReactNode } from "react";
 import {
   Command,
   CommandDialog,
@@ -18,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import type { ComponentProps, ReactNode } from "react";
 
 export type ModelSelectorProps = ComponentProps<typeof Dialog>;
 
@@ -102,8 +101,10 @@ export const ModelSelectorSeparator = (props: ModelSelectorSeparatorProps) => (
   <CommandSeparator {...props} />
 );
 
-export type ModelSelectorLogoProps = {
-  className?: string;
+export type ModelSelectorLogoProps = Omit<
+  ComponentProps<"img">,
+  "src" | "alt"
+> & {
   provider:
     | "moonshotai-cn"
     | "lucidquery"
@@ -167,13 +168,14 @@ export type ModelSelectorLogoProps = {
 export const ModelSelectorLogo = ({
   provider,
   className,
+  ...props
 }: ModelSelectorLogoProps) => (
-  <Image
+  <img
+    {...props}
     alt={`${provider} logo`}
     className={cn("size-3 dark:invert", className)}
     height={12}
     src={`https://models.dev/logos/${provider}.svg`}
-    unoptimized
     width={12}
   />
 );
