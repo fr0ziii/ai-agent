@@ -1,22 +1,20 @@
 import {
-  ToolLoopAgent,
-  type InferAgentUIMessage,
-  stepCountIs,
-  smoothStream,
-  type UIMessageStreamWriter,
-  type LanguageModel,
   hasToolCall,
+  type InferAgentUIMessage,
+  type LanguageModel,
+  stepCountIs,
+  ToolLoopAgent,
+  type UIMessageStreamWriter,
 } from "ai";
 import type { Session } from "next-auth";
-import { agentTools } from "./tools";
-import {
-  getAgentState,
-  formatStateContext,
-  completeCurrentStep,
-  addToContext,
-  updateAgentState,
-} from "./state";
 import type { ChatMessage } from "@/lib/types";
+import {
+  addToContext,
+  completeCurrentStep,
+  formatStateContext,
+  getAgentState,
+} from "./state";
+import { type AgentTools, createAgentTools } from "./tools";
 
 export type CreateAgentOptions = {
   model: LanguageModel;
@@ -28,10 +26,8 @@ export type CreateAgentOptions = {
   maxSteps?: number;
 };
 
-// Define the chat tools for the agent
-const createChatTools = () => agentTools;
-
-type ChatTools = typeof agentTools;
+// Type for chat tools
+type ChatTools = AgentTools;
 
 export function createAgent({
   model,
@@ -53,7 +49,7 @@ export function createAgent({
     });
   }
 
-  const tools = createChatTools();
+  const tools = createAgentTools({ session, dataStream });
 
   // Track the last processed step to detect new completions
   let lastProcessedStepCount = 0;
@@ -79,7 +75,10 @@ export function createAgent({
             const completedStep = steps[i];
 
             // Record tool results in context
-            if (completedStep.toolResults && completedStep.toolResults.length > 0) {
+            if (
+              completedStep.toolResults &&
+              completedStep.toolResults.length > 0
+            ) {
               for (const toolResult of completedStep.toolResults) {
                 // Safely extract result - toolResult may have different shapes
                 const resultObj = toolResult as unknown as { result?: unknown };
@@ -97,17 +96,13 @@ export function createAgent({
                 );
               }
 
-
               // Complete the current step in the plan if one exists
               const state = await getAgentState(chatId);
               if (state?.plan && state.currentStepIndex !== undefined) {
                 const toolNames = completedStep.toolResults
                   .map((r) => r.toolName)
                   .join(", ");
-                await completeCurrentStep(
-                  chatId,
-                  `Executed: ${toolNames}`
-                );
+                await completeCurrentStep(chatId, `Executed: ${toolNames}`);
               }
             }
           }
@@ -162,6 +157,5 @@ export type ChatAgent = ToolLoopAgent<never, ChatTools>;
 // Agent message type - union of both agent types
 export type AgentMessage = InferAgentUIMessage<ChatAgent>;
 
-// Smooth stream transform to apply during streaming
-export { smoothStream };
-
+// Smooth stream transform - re-exported for convenience
+export { smoothStream } from "ai";

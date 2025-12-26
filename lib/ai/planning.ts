@@ -7,11 +7,16 @@ import type { AgentPlan, PlanStep } from "@/lib/db/schema";
 import { generateUUID } from "@/lib/utils";
 
 // Planning model - fast and cheap for plan generation
-const PLANNING_MODEL = gateway("google/gemini-2.5-flash-lite");
+// Can be overridden via PLANNING_MODEL environment variable
+const PLANNING_MODEL = gateway(
+  process.env.PLANNING_MODEL || "google/gemini-2.5-flash-lite"
+);
 
 // Plan step schema for structured output
 const PlanStepSchema = z.object({
-  description: z.string().describe("Clear description of what this step accomplishes"),
+  description: z
+    .string()
+    .describe("Clear description of what this step accomplishes"),
   tool: z
     .enum(["fetchUrl", "analyzeContent", "finalAnswer"])
     .optional()
