@@ -13,7 +13,7 @@ const PLANNING_MODEL = gateway("google/gemini-2.5-flash-lite");
 const PlanStepSchema = z.object({
   description: z.string().describe("Clear description of what this step accomplishes"),
   tool: z
-    .enum(["webSearch", "fetchUrl", "analyzeContent", "finalAnswer"])
+    .enum(["fetchUrl", "analyzeContent", "finalAnswer"])
     .optional()
     .describe("Which tool to use for this step, if applicable"),
 });
@@ -42,12 +42,11 @@ Your job is to break down a user's request into a clear, actionable plan.
 Guidelines:
 - Create between 1-7 steps (prefer fewer, focused steps)
 - Each step should be concrete and achievable
-- Consider which tools might be needed: webSearch, fetchUrl, analyzeContent, finalAnswer
+- Consider which tools might be needed: fetchUrl, analyzeContent, finalAnswer
 - The final step should usually involve synthesizing results with finalAnswer
 - Keep the plan focused on the user's actual request
 
 Available tools:
-- webSearch: Search the web for current information
 - fetchUrl: Fetch and extract content from a specific URL
 - analyzeContent: Analyze and synthesize information
 - finalAnswer: Provide the final response to the user`;

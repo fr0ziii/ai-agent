@@ -1,7 +1,6 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
 import type { ArtifactKind } from "@/components/artifact";
-import type { webSearch } from "./ai/tools/web-search";
 import type { fetchUrl } from "./ai/tools/fetch-url";
 import type { analyzeContent } from "./ai/tools/analyze-content";
 import type { finalAnswer } from "./ai/tools/final-answer";
@@ -17,13 +16,11 @@ export const messageMetadataSchema = z.object({
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
-type webSearchTool = InferUITool<typeof webSearch>;
 type fetchUrlTool = InferUITool<typeof fetchUrl>;
 type analyzeContentTool = InferUITool<typeof analyzeContent>;
 type finalAnswerTool = InferUITool<typeof finalAnswer>;
 
 export type ChatTools = {
-  webSearch: webSearchTool;
   fetchUrl: fetchUrlTool;
   analyzeContent: analyzeContentTool;
   finalAnswer: finalAnswerTool;

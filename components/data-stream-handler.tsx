@@ -13,6 +13,7 @@ export function DataStreamHandler() {
   const { mutate } = useSWRConfig();
 
   const { artifact, setArtifact, setMetadata } = useArtifact();
+  const { setAgentPlan, setAgentStatus } = useDataStream();
 
   useEffect(() => {
     if (!dataStream?.length) {
@@ -23,6 +24,34 @@ export function DataStreamHandler() {
     setDataStream([]);
 
     for (const delta of newDeltas) {
+      // Handle agent state updates
+      if (delta.type === "data-agent-plan") {
+        setAgentPlan(delta.data);
+        continue;
+      }
+
+      if (delta.type === "data-agent-status") {
+        setAgentStatus(delta.data);
+        continue;
+      }
+
+      if (delta.type === "data-agent-step-progress") {
+        setAgentPlan((prev) => {
+          if (!prev) {
+            return null;
+          }
+          const newSteps = [...prev.steps];
+          if (newSteps[delta.data.stepIndex]) {
+            newSteps[delta.data.stepIndex] = {
+              ...newSteps[delta.data.stepIndex],
+              status: delta.data.status,
+            };
+          }
+          return { ...prev, steps: newSteps };
+        });
+        continue;
+      }
+
       // Handle chat title updates
       if (delta.type === "data-chat-title") {
         mutate(unstable_serialize(getChatHistoryPaginationKey));
@@ -86,7 +115,16 @@ export function DataStreamHandler() {
         }
       });
     }
-  }, [dataStream, setArtifact, setMetadata, artifact, setDataStream, mutate]);
+  }, [
+    dataStream,
+    setArtifact,
+    setMetadata,
+    artifact,
+    setDataStream,
+    mutate,
+    setAgentPlan,
+    setAgentStatus,
+  ]);
 
   return null;
 }

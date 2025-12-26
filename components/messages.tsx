@@ -1,10 +1,25 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
-import { ArrowDownIcon } from "lucide-react";
+import {
+  ArrowDownIcon,
+  CheckCircle2Icon,
+  CircleIcon,
+  Loader2Icon,
+  XCircleIcon,
+} from "lucide-react";
 import { memo } from "react";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import {
+  Plan,
+  PlanContent,
+  PlanDescription,
+  PlanHeader,
+  PlanTitle,
+  PlanTrigger,
+} from "./ai-elements/plan";
 import { useDataStream } from "./data-stream-provider";
 import { Greeting } from "./greeting";
 import { PreviewMessage, ThinkingMessage } from "./message";
@@ -43,7 +58,7 @@ function PureMessages({
     status,
   });
 
-  useDataStream();
+  const { agentPlan, agentStatus } = useDataStream();
 
   return (
     <div className="relative flex-1">
@@ -53,6 +68,62 @@ function PureMessages({
       >
         <div className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
           {messages.length === 0 && <Greeting />}
+
+          {agentPlan &&
+            (agentStatus === "planning" || agentStatus === "executing") && (
+              <Plan className="mb-4" isStreaming={agentStatus === "planning"}>
+                <PlanHeader>
+                  <div className="flex flex-col gap-1">
+                    <PlanTitle>
+                      {agentStatus === "planning"
+                        ? "Calculando Plan..."
+                        : agentPlan.goal}
+                    </PlanTitle>
+                    <PlanDescription>
+                      {agentStatus === "planning"
+                        ? "El agente está diseñando una estrategia para responder."
+                        : `${agentPlan.steps.filter((s) => s.status === "done").length} de ${agentPlan.steps.length} pasos completados`}
+                    </PlanDescription>
+                  </div>
+                  <PlanTrigger />
+                </PlanHeader>
+                <PlanContent>
+                  <div className="flex flex-col gap-3">
+                    {agentPlan.steps.map((step, index) => (
+                      <div
+                        className="flex items-start gap-3 text-sm"
+                        key={step.id}
+                      >
+                        <div className="mt-0.5">
+                          {step.status === "done" ? (
+                            <CheckCircle2Icon className="size-4 text-green-500" />
+                          ) : step.status === "in_progress" ? (
+                            <Loader2Icon className="size-4 animate-spin text-blue-500" />
+                          ) : step.status === "failed" ? (
+                            <XCircleIcon className="size-4 text-red-500" />
+                          ) : (
+                            <CircleIcon className="size-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div
+                          className={cn(
+                            "flex-1",
+                            step.status === "done"
+                              ? "text-muted-foreground line-through"
+                              : "text-foreground"
+                          )}
+                        >
+                          <span className="mr-2 font-medium">
+                            Paso {index + 1}:
+                          </span>
+                          {step.description}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </PlanContent>
+              </Plan>
+            )}
 
           {messages.map((message, index) => (
             <PreviewMessage
